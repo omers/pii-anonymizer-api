@@ -57,7 +57,7 @@ To set up and run this FastAPI service, follow these steps:
 
    ```json
    {
-       "anonymized_text": "[PII_EMAIL] email is [PII_EMAIL] and his phone number is [PII_PHONE_US]."
+       "text": "[PII_EMAIL] email is [PII_EMAIL] and his phone number is [PII_PHONE_US]."
    }
    ```
 
