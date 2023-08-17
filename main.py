@@ -14,7 +14,11 @@ class Event(BaseModel):
 
 anonymizer = AnonymizerEngine()
 analyzer = AnalyzerEngine()
-@app.post("/annonimyze/")
+@app.get("/health")
+async def health():
+  return {"status": "ok"}
+
+@app.post("/anonymize/")
 async def annonimyze_data(item: Event):
   text = item.text
   results = analyzer.analyze(text=text,language='en')
