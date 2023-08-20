@@ -18,7 +18,7 @@ analyzer = AnalyzerEngine()
 async def health():
   return {"status": "ok"}
 
-@app.post("/anonymize/")
+@app.post("/anonymize")
 async def annonimyze_data(item: Event):
   text = item.text
   results = analyzer.analyze(text=text,language='en')
