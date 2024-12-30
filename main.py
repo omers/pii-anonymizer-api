@@ -14,13 +14,29 @@ class Event(BaseModel):
 
 anonymizer = AnonymizerEngine()
 analyzer = AnalyzerEngine()
+
 @app.get("/health")
-async def health():
-  return {"status": "ok"}
+async def health() -> dict:
+    """
+    Health check endpoint.
+    """
+    return {"status": "ok"}
 
 @app.post("/anonymize")
-async def annonimyze_data(item: Event):
-  text = item.text
-  results = analyzer.analyze(text=text,language='en')
-  anonymized_text = anonymizer.anonymize(text=text, analyzer_results=results)
-  return {"text": anonymized_text.text}
+async def anonymize_data(item: Event) -> dict:
+    """
+    Anonymize the provided text data.
+    
+    Args:
+        item (Event): The event containing the text to be anonymized.
+    
+    Returns:
+        dict: A dictionary containing the anonymized text.
+    """
+    text = item.text
+    if text is None:
+        return {"text": ""}
+    
+    results = analyzer.analyze(text=text, language='en')
+    anonymized_text = anonymizer.anonymize(text=text, analyzer_results=results)
+    return {"text": anonymized_text.text}
