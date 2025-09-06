@@ -524,11 +524,9 @@ curl -X POST "http://localhost:8000/anonymize" \
 
 ## 📞 Support & Community
 
-- 💬 **Discord**: [Join our community](https://discord.gg/pii-anonymizer)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/omers/pii-anonymizer-api/issues)
 - 💡 **Discussions**: [GitHub Discussions](https://github.com/omers/pii-anonymizer-api/discussions)
 - 📖 **Docs**: [API Documentation](http://localhost:8000/docs)
-- 🐦 **Twitter**: [@PIIAnonymizer](https://twitter.com/PIIAnonymizer)
 
 ## 📝 License
 
