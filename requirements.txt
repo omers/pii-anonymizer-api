@@ -1,72 +1,43 @@
+# Core runtime dependencies - REQUIRED for production
 annotated-types==0.7.0
 anyio==4.10.0
-black==25.1.0
 blis==1.3.0
 catalogue==2.0.10
 certifi==2025.8.3
 cffi==1.17.1
-cfgv==3.4.0
 charset-normalizer==3.4.3
 click==8.2.1
 cloudpathlib==0.22.0
 confection==0.1.5
-coverage==7.10.6
 cryptography==44.0.3
 cymem==2.0.11
-distlib==0.4.0
 fastapi==0.116.1
-filelock==3.19.1
-flake8==7.3.0
 h11==0.16.0
 httpcore==1.0.9
 httptools==0.6.4
-httpx==0.28.1
-identify==2.6.14
 idna==3.10
-iniconfig==2.1.0
-isort==6.0.1
 Jinja2==3.1.6
 langcodes==3.5.0
 language_data==1.3.0
 marisa-trie==1.3.1
-markdown-it-py==4.0.0
 MarkupSafe==3.0.2
-mccabe==0.7.0
-mdurl==0.1.2
 murmurhash==1.0.13
-mypy==1.17.1
-mypy_extensions==1.1.0
-nodeenv==1.9.1
 numpy==2.3.2
 packaging==25.0
-pathspec==0.12.1
 phonenumbers==9.0.13
-platformdirs==4.4.0
-pluggy==1.6.0
-pre_commit==4.3.0
 preshed==3.0.10
 presidio_analyzer==2.2.359
 presidio_anonymizer==2.2.359
 psutil==7.0.0
-pycodestyle==2.14.0
 pycparser==2.22
 pycryptodome==3.23.0
 pydantic==2.11.7
 pydantic_core==2.33.2
-pyflakes==3.4.0
-Pygments==2.19.2
-pytest==8.4.2
-pytest-asyncio==1.1.0
-pytest-cov==6.3.0
-pytest-mock==3.15.0
-python-dotenv==1.1.1
 python-multipart==0.0.20
 PyYAML==6.0.2
 regex==2025.9.1
 requests==2.32.5
 requests-file==2.1.0
-rich==14.1.0
-shellingham==1.5.4
 smart_open==7.3.0.post1
 sniffio==1.3.1
 spacy==3.8.7
@@ -83,9 +54,42 @@ typing_extensions==4.15.0
 urllib3==2.5.0
 uvicorn==0.35.0
 uvloop==0.21.0
-virtualenv==20.34.0
 wasabi==1.1.3
 watchfiles==1.1.0
 weasel==0.4.1
 websockets==15.0.1
 wrapt==1.17.3
+
+# Development and testing dependencies - NOT REQUIRED for production
+# Uncomment these for development/testing environments
+# black==25.1.0                    # Code formatter
+# cfgv==3.4.0                      # Configuration file validation
+# coverage==7.10.6                 # Test coverage measurement
+# distlib==0.4.0                   # Distribution utilities
+# filelock==3.19.1                 # File locking
+# flake8==7.3.0                    # Code linter
+# httpx==0.28.1                    # HTTP client for testing
+# identify==2.6.14                 # File identification
+# iniconfig==2.1.0                 # INI config parser
+# isort==6.0.1                     # Import sorter
+# markdown-it-py==4.0.0            # Markdown parser
+# mccabe==0.7.0                    # Complexity checker
+# mdurl==0.1.2                     # Markdown URL utilities
+# mypy==1.17.1                     # Static type checker
+# mypy_extensions==1.1.0           # MyPy extensions
+# nodeenv==1.9.1                   # Node.js environment
+# pathspec==0.12.1                 # Path specification
+# platformdirs==4.4.0              # Platform directories
+# pluggy==1.6.0                    # Plugin system
+# pre_commit==4.3.0                # Pre-commit hooks
+# pycodestyle==2.14.0              # Style guide checker
+# pyflakes==3.4.0                  # Python checker
+# Pygments==2.19.2                 # Syntax highlighter
+# pytest==8.4.2                    # Testing framework
+# pytest-asyncio==1.1.0            # Async testing
+# pytest-cov==6.3.0                # Coverage plugin
+# pytest-mock==3.15.0              # Mocking plugin
+# python-dotenv==1.1.1             # Environment variables
+# rich==14.1.0                     # Rich text formatting
+# shellingham==1.5.4               # Shell detection
+# virtualenv==20.34.0               # Virtual environment
