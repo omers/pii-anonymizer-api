@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         include:
           # Add macOS and Windows for latest Python version only
           - os: windows-latest
@@ -126,7 +126,7 @@ jobs:
         fail_ci_if_error: false
 
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
@@ -236,7 +236,7 @@ jobs:
         cat quality-report.txt
 
     - name: Upload quality report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: code-quality-report
         path: quality-report.txt
