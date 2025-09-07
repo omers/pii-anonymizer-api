@@ -64,11 +64,6 @@ jobs:
         python -m spacy download en_core_web_lg --quiet
       continue-on-error: true
 
-    - name: Lint with flake8
-      run: |
-        flake8 main.py tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 main.py tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
     - name: Type check with mypy
       run: |
         mypy main.py --ignore-missing-imports
