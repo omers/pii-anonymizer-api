@@ -1,4 +1,4 @@
-# 🔒 PII Anonymizer API - Enterprise-Grade Privacy Protection
+# PII Anonymizer API - Enterprise-Grade Privacy Protection
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-green.svg)](https://fastapi.tiangolo.com/)
