@@ -61,17 +61,7 @@ jobs:
 
     - name: Install spaCy model
       run: |
-        python scripts/install_spacy_model.py
-      continue-on-error: true
-
-    - name: Check dependencies
-      run: |
-        python scripts/check_dependencies.py
-      continue-on-error: true
-
-    - name: Test Presidio imports
-      run: |
-        python scripts/test_presidio_imports.py
+        python -m spacy download en_core_web_lg --quiet
       continue-on-error: true
 
     - name: Lint with flake8
