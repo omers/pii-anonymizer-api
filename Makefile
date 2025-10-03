@@ -6,6 +6,7 @@
 help:
 	@echo "Available commands:"
 	@echo "  install     - Install dependencies"
+	@echo "  update-deps - Update dependencies"
 	@echo "  test        - Run tests"
 	@echo "  test-cov    - Run tests with coverage"
 	@echo "  lint        - Run linting"
@@ -24,6 +25,9 @@ install:
 # Install dependencies without spaCy model (for CI/testing)
 install-deps:
 	pip install -r requirements.txt
+
+update-deps:
+	cat requirements.txt | grep -v '^#' | cut -f 1 -d '=' | xargs pip install -U
 
 # Install spaCy model separately
 install-spacy:
