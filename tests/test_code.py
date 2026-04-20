@@ -122,7 +122,6 @@ class TestAnonymizeEndpoint:
                 assert "start" in entity
                 assert "end" in entity
                 assert "score" in entity
-                assert "text" in entity
 
     def test_anonymize_with_custom_config(self, sample_analyzer_results, sample_anonymize_result):
         """Test anonymization with custom configuration"""

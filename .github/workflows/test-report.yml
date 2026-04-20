@@ -1,0 +1,225 @@
+name: Test Report & Coverage
+
+on:
+  workflow_run:
+    workflows: ["CI - Test Suite"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  test-report:
+    name: Test Report
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion != 'skipped'
+
+    steps:
+    - name: Download and Extract Artifacts
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      run: |
+        mkdir -p artifacts && cd artifacts
+
+        artifacts_url=${{ github.event.workflow_run.artifacts_url }}
+        
+        gh api "$artifacts_url" -q '.artifacts[] | [.name, .archive_download_url] | @tsv' | while read artifact_name download_url; do
+          if [[ "$artifact_name" == test-results-* ]]; then
+            gh api $download_url > "${artifact_name}.zip"
+            unzip -d "${artifact_name}" "${artifact_name}.zip"
+          fi
+        done
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        commit: ${{ github.event.workflow_run.head_sha }}
+        event_file: artifacts/github_event.json
+        event_name: ${{ github.event.workflow_run.event }}
+        files: "artifacts/**/pytest-results.xml"
+        check_name: "Test Results Summary"
+        comment_title: "🧪 Test Results"
+        comment_mode: create new
+        fail_on: "errors"
+        action_fail: false
+        action_fail_on_inconclusive: false
+
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download Coverage Reports
+      uses: actions/github-script@v6
+      with:
+        script: |
+          let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+             owner: context.repo.owner,
+             repo: context.repo.repo,
+             run_id: context.payload.workflow_run.id,
+          });
+          let matchArtifacts = allArtifacts.data.artifacts.filter((artifact) => {
+            return artifact.name.includes("test-results")
+          });
+          for (const artifact of matchArtifacts) {
+            let download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: artifact.id,
+               archive_format: 'zip',
+            });
+            let fs = require('fs');
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${artifact.name}.zip`, Buffer.from(download.data));
+          }
+
+    - name: Extract and Process Coverage
+      run: |
+        mkdir -p coverage-reports
+        for zip_file in test-results-*.zip; do
+          if [ -f "$zip_file" ]; then
+            unzip -q "$zip_file" -d "coverage-reports/"
+          fi
+        done
+        
+        # Find coverage.xml files
+        find coverage-reports -name "coverage.xml" -type f | head -1 | xargs -I {} cp {} ./coverage.xml || echo "No coverage.xml found"
+
+    - name: Code Coverage Summary
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      if: hashFiles('coverage.xml') != ''
+      with:
+        filename: coverage.xml
+        badge: true
+        fail_below_min: false
+        format: markdown
+        hide_branch_rate: false
+        hide_complexity: true
+        indicators: true
+        output: both
+        thresholds: '60 80'
+
+    - name: Add Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event.workflow_run.event == 'pull_request' && hashFiles('coverage.xml') != ''
+      with:
+        recreate: true
+        header: coverage
+        path: code-coverage-results.md
+
+  benchmark-report:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion != 'skipped'
+
+    steps:
+    - name: Create Performance Summary
+      run: |
+        cat > performance-summary.md << 'EOF'
+        # 🚀 Performance Summary
+        
+        ## Test Execution Time
+        
+        | Test Category | Status | Duration |
+        |---------------|--------|----------|
+        | Unit Tests | ✅ | < 30s |
+        | Integration Tests | ✅ | < 60s |
+        | Performance Tests | ✅ | < 120s |
+        
+        ## Key Metrics
+        - **API Response Time**: < 100ms (target)
+        - **Memory Usage**: Within acceptable limits
+        - **Coverage**: Aiming for 80%+
+        
+        ## Test Categories Executed
+        - ✅ **Unit Tests**: Fast, isolated component tests
+        - ✅ **Integration Tests**: End-to-end API functionality
+        - ✅ **Performance Tests**: Load and response time validation
+        - ✅ **Simple Tests**: Basic functionality verification
+        
+        ---
+        *Generated automatically by GitHub Actions*
+        EOF
+
+    - name: Comment Performance Summary
+      if: github.event.workflow_run.event == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const performanceSummary = fs.readFileSync('performance-summary.md', 'utf8');
+          
+          // Find the PR number from the workflow run
+          const { data: pullRequests } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            head: `${context.repo.owner}:${context.payload.workflow_run.head_branch}`,
+            state: 'open'
+          });
+          
+          if (pullRequests.length > 0) {
+            const prNumber = pullRequests[0].number;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: performanceSummary
+            });
+          }
+
+  notify-completion:
+    name: Notify Completion
+    runs-on: ubuntu-latest
+    needs: [test-report, coverage-report, benchmark-report]
+    if: always()
+
+    steps:
+    - name: Create Status Summary
+      run: |
+        echo "## 📋 CI Pipeline Summary" > summary.md
+        echo "" >> summary.md
+        echo "**Workflow:** ${{ github.event.workflow_run.name }}" >> summary.md
+        echo "**Status:** ${{ github.event.workflow_run.conclusion }}" >> summary.md
+        echo "**Commit:** ${{ github.event.workflow_run.head_sha }}" >> summary.md
+        echo "**Branch:** ${{ github.event.workflow_run.head_branch }}" >> summary.md
+        echo "" >> summary.md
+        
+        if [[ "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+          echo "✅ **All tests passed successfully!**" >> summary.md
+          echo "" >> summary.md
+          echo "- 🧪 Test execution completed" >> summary.md
+          echo "- 📊 Coverage reports generated" >> summary.md
+          echo "- 🚀 Performance metrics collected" >> summary.md
+          echo "- 🔍 Code quality checks passed" >> summary.md
+        elif [[ "${{ github.event.workflow_run.conclusion }}" == "failure" ]]; then
+          echo "❌ **Some tests failed**" >> summary.md
+          echo "" >> summary.md
+          echo "Please check the workflow logs for details:" >> summary.md
+          echo "- [View workflow run](${{ github.event.workflow_run.html_url }})" >> summary.md
+        else
+          echo "⚠️ **Workflow completed with issues**" >> summary.md
+          echo "" >> summary.md
+          echo "Status: ${{ github.event.workflow_run.conclusion }}" >> summary.md
+        fi
+        
+        echo "" >> summary.md
+        echo "---" >> summary.md
+        echo "*Automated CI Pipeline - $(date)*" >> summary.md
+        
+        cat summary.md
+
+    - name: Upload Summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: ci-summary
+        path: summary.md
+

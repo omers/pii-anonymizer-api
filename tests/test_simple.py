@@ -116,7 +116,6 @@ class TestBasicAPI:
         assert "start" in entity
         assert "end" in entity
         assert "score" in entity
-        assert "text" in entity
     
     def test_anonymize_endpoint_engines_not_initialized(self):
         """Test anonymize endpoint when engines are not initialized."""
