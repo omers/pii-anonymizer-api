@@ -8,7 +8,7 @@ from enum import Enum
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from presidio_analyzer import AnalyzerEngine, RecognizerResult
 from presidio_anonymizer import AnonymizerEngine
 
@@ -112,7 +112,8 @@ class AnonymizeRequest(BaseModel):
         default=None, description="Anonymization configuration"
     )
 
-    @validator("language")
+    @field_validator("language", mode="before")
+    @classmethod
     def validate_language(cls, v):
         if v not in Config.SUPPORTED_LANGUAGES:
             raise ValueError(
@@ -128,7 +129,6 @@ class DetectedEntity(BaseModel):
     start: int = Field(..., description="Start position in text")
     end: int = Field(..., description="End position in text")
     score: float = Field(..., description="Confidence score")
-    text: str = Field(..., description="Original text of the entity")
 
 
 class AnonymizeResponse(BaseModel):
@@ -182,6 +182,7 @@ async def lifespan(app: FastAPI):
         analyzer_engine = AnalyzerEngine()
         anonymizer_engine = AnonymizerEngine()
         logger.info("Presidio engines initialized successfully")
+        app.state.start_time = time.time()
 
         yield
 
@@ -203,10 +204,11 @@ app = FastAPI(
 )
 
 # Add CORS middleware
+_cors_allow_credentials = Config.CORS_ORIGINS != ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=Config.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=_cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -218,7 +220,7 @@ async def value_error_handler(request: Request, exc: ValueError):
     logger.error(f"ValueError: {str(exc)}")
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content=ErrorResponse(error="ValidationError", message=str(exc)).dict(),
+        content=ErrorResponse(error="ValidationError", message=str(exc)).model_dump(),
     )
 
 
@@ -227,7 +229,7 @@ async def runtime_error_handler(request: Request, exc: RuntimeError):
     logger.error(f"RuntimeError: {str(exc)}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=ErrorResponse(error="RuntimeError", message=str(exc)).dict(),
+        content=ErrorResponse(error="RuntimeError", message=str(exc)).model_dump(),
     )
 
 
@@ -238,7 +240,7 @@ async def general_exception_handler(request: Request, exc: Exception):
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=ErrorResponse(
             error="InternalServerError", message="An unexpected error occurred"
-        ).dict(),
+        ).model_dump(),
     )
 
 
@@ -352,6 +354,14 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
                         "hash", {"hash_type": request.config.hash_type}
                     )
                 }
+            elif request.config.strategy == AnonymizationStrategy.ENCRYPT:
+                operators = {
+                    "DEFAULT": OperatorConfig("encrypt", {"key": os.getenv("ANONYMIZER_ENCRYPT_KEY", "")})
+                }
+                if not os.getenv("ANONYMIZER_ENCRYPT_KEY"):
+                    raise ValueError(
+                        "ENCRYPT strategy requires ANONYMIZER_ENCRYPT_KEY environment variable to be set"
+                    )
 
         # Anonymize text
         anonymized_result = anonymizer_engine.anonymize(
@@ -367,7 +377,6 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
                 start=result.start,
                 end=result.end,
                 score=result.score,
-                text=request.text[result.start : result.end],
             )
             for result in analyzer_results
         ]
@@ -467,14 +476,6 @@ async def get_info():
     }
 
 
-# Add startup event to track application start time
-@app.on_event("startup")
-async def startup_event():
-    """Track application startup time for uptime calculation"""
-    app.state.start_time = time.time()
-    logger.info("Application startup completed")
-
-
 # Test endpoints (only available in development/testing)
 if os.getenv("ENVIRONMENT", "development") in ["development", "testing"]:
 
@@ -500,12 +501,12 @@ if os.getenv("ENVIRONMENT", "development") in ["development", "testing"]:
                     status_code=400,
                     content=ErrorResponse(
                         error="ValidationError", message=str(e)
-                    ).dict(),
+                    ).model_dump(),
                 )
             elif isinstance(e, RuntimeError):
                 return JSONResponse(
                     status_code=500,
-                    content=ErrorResponse(error="RuntimeError", message=str(e)).dict(),
+                    content=ErrorResponse(error="RuntimeError", message=str(e)).model_dump(),
                 )
             else:
                 return JSONResponse(
@@ -513,5 +514,5 @@ if os.getenv("ENVIRONMENT", "development") in ["development", "testing"]:
                     content=ErrorResponse(
                         error="InternalServerError",
                         message="An unexpected error occurred",
-                    ).dict(),
+                    ).model_dump(),
                 )
