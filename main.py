@@ -54,9 +54,16 @@ class AnonymizationStrategy(str, Enum):
     MASK = "mask"
     ENCRYPT = "encrypt"
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class EntityType(str, Enum):
     """Supported PII entity types"""
+
+    def __str__(self) -> str:
+        return self.value
+
 
     PERSON = "PERSON"
     EMAIL_ADDRESS = "EMAIL_ADDRESS"
@@ -395,6 +402,8 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
             anonymized_length=len(anonymized_result.text),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error during anonymization: {str(e)}", exc_info=True)
         raise HTTPException(

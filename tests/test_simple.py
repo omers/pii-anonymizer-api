@@ -126,8 +126,7 @@ class TestBasicAPI:
                 "text": "test text"
             })
             
-            # The API returns 500 when engines are not initialized due to the exception handler
-            assert response.status_code == 500
+            assert response.status_code == 503
             data = response.json()
             assert "detail" in data
             assert "engines not initialized" in data["detail"].lower()
@@ -174,12 +173,12 @@ class TestErrorHandling:
     
     def test_invalid_json(self):
         """Test handling of invalid JSON."""
-        response = self.client.post("/anonymize", data="invalid json")
+        response = self.client.post("/anonymize", content=b"invalid json")
         assert response.status_code == 422
-    
+
     def test_wrong_content_type(self):
         """Test handling of wrong content type."""
-        response = self.client.post("/anonymize", data="text=test")
+        response = self.client.post("/anonymize", content=b"text=test")
         assert response.status_code == 422
     
     @patch('main.analyzer_engine')

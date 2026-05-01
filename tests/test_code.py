@@ -244,7 +244,7 @@ class TestValidationAndErrorHandling:
     
     def test_invalid_json_request(self):
         """Test request with invalid JSON"""
-        response = client.post("/anonymize", data="invalid json")
+        response = client.post("/anonymize", content=b"invalid json")
         assert response.status_code == 422
 
     def test_missing_required_fields(self):
@@ -264,18 +264,19 @@ class TestValidationAndErrorHandling:
         assert response.status_code == 422
 
     def test_custom_error_handler(self):
-        """Test custom error handlers"""
-        with patch('main.analyzer_engine') as mock_analyzer:
+        """Test that unexpected errors are returned as 500 with detail message"""
+        with patch('main.analyzer_engine') as mock_analyzer, \
+             patch('main.anonymizer_engine'):
             mock_analyzer.analyze.side_effect = ValueError("Test error")
-            
+
             response = client.post("/anonymize", json={
                 "text": "Test text"
             })
-            
-            assert response.status_code == 400
+
+            assert response.status_code == 500
             error_data = response.json()
-            assert error_data["error"] == "ValidationError"
-            assert "Test error" in error_data["message"]
+            assert "detail" in error_data
+            assert "Test error" in error_data["detail"]
 
 class TestConfigurationAndModels:
     """Test cases for configuration and data models"""

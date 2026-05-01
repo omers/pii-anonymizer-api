@@ -69,7 +69,8 @@ class TestPerformanceMetrics:
                 
                 # Mock proportional processing time
                 def size_based_analyze(*args, **kwargs):
-                    time.sleep(len(args[0]) * 0.00001)  # 0.01ms per character
+                    text = args[0] if args else kwargs.get('text', '')
+                    time.sleep(len(text) * 0.00001)  # 0.01ms per character
                     return [RecognizerResult("PERSON", 0, 4, 0.85)]
                 
                 mock_analyzer.analyze.side_effect = size_based_analyze
@@ -137,45 +138,46 @@ class TestConcurrencyAndLoad:
         """Test basic concurrent request handling"""
         num_requests = 10
         results = []
-        
-        def make_request(request_id):
-            with patch('main.analyzer_engine') as mock_analyzer, \
-                 patch('main.anonymizer_engine') as mock_anonymizer:
-                
-                mock_analyzer.analyze.return_value = [
-                    RecognizerResult("PERSON", 0, 10, 0.85)
-                ]
-                mock_result = Mock()
-                mock_result.text = f"Anonymized request {request_id}"
-                mock_anonymizer.anonymize.return_value = mock_result
-                
+
+        mock_result = Mock()
+        mock_result.text = "Anonymized request"
+
+        with patch('main.analyzer_engine') as mock_analyzer, \
+             patch('main.anonymizer_engine') as mock_anonymizer:
+
+            mock_analyzer.analyze.return_value = [
+                RecognizerResult("PERSON", 0, 10, 0.85)
+            ]
+            mock_anonymizer.anonymize.return_value = mock_result
+
+            def make_request(request_id):
                 start_time = time.time()
                 response = self.client.post("/anonymize", json={
                     "text": f"Test text for request {request_id}"
                 })
                 end_time = time.time()
-                
+
                 return {
                     "request_id": request_id,
                     "status_code": response.status_code,
                     "response_time": end_time - start_time,
                     "data": response.json() if response.status_code == 200 else None
                 }
-        
-        # Execute concurrent requests
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [
-                executor.submit(make_request, i)
-                for i in range(num_requests)
-            ]
-            
-            for future in as_completed(futures):
-                results.append(future.result())
-        
+
+            # Execute concurrent requests
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                futures = [
+                    executor.submit(make_request, i)
+                    for i in range(num_requests)
+                ]
+
+                for future in as_completed(futures):
+                    results.append(future.result())
+
         # Verify all requests completed successfully
         assert len(results) == num_requests
         assert all(result["status_code"] == 200 for result in results)
-        
+
         # Verify reasonable response times
         response_times = [result["response_time"] for result in results]
         avg_response_time = sum(response_times) / len(response_times)
@@ -186,37 +188,38 @@ class TestConcurrencyAndLoad:
         num_requests = 50
         max_workers = 10
         results = []
-        
-        def make_request(request_id):
-            with patch('main.analyzer_engine') as mock_analyzer, \
-                 patch('main.anonymizer_engine') as mock_anonymizer:
-                
+
+        mock_result = Mock()
+        mock_result.text = "Processed"
+
+        with patch('main.analyzer_engine') as mock_analyzer, \
+             patch('main.anonymizer_engine') as mock_anonymizer:
+
+            mock_analyzer.analyze.return_value = [
+                RecognizerResult("EMAIL_ADDRESS", 10, 30, 0.95)
+            ]
+            mock_anonymizer.anonymize.return_value = mock_result
+
+            def make_request(request_id):
                 # Add small random delay to simulate real processing
                 time.sleep(0.01 + (request_id % 5) * 0.01)
-                
-                mock_analyzer.analyze.return_value = [
-                    RecognizerResult("EMAIL_ADDRESS", 10, 30, 0.95)
-                ]
-                mock_result = Mock()
-                mock_result.text = f"Processed {request_id}"
-                mock_anonymizer.anonymize.return_value = mock_result
-                
+
                 response = self.client.post("/anonymize", json={
                     "text": f"user{request_id}@example.com test text"
                 })
-                
+
                 return response.status_code
-        
-        start_time = time.time()
-        
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [
-                executor.submit(make_request, i)
-                for i in range(num_requests)
-            ]
-            
-            for future in as_completed(futures):
-                results.append(future.result())
+
+            start_time = time.time()
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [
+                    executor.submit(make_request, i)
+                    for i in range(num_requests)
+                ]
+
+                for future in as_completed(futures):
+                    results.append(future.result())
         
         end_time = time.time()
         total_time = end_time - start_time
@@ -375,13 +378,16 @@ class TestResourceUtilization:
         """Test CPU usage during processing"""
         import psutil
         import os
-        
+
         process = psutil.Process(os.getpid())
-        
-        # Get baseline CPU usage
-        process.cpu_percent()  # First call returns 0.0
-        time.sleep(0.1)
-        baseline_cpu = process.cpu_percent()
+
+        try:
+            # Get baseline CPU usage
+            process.cpu_percent()  # First call returns 0.0
+            time.sleep(0.1)
+            baseline_cpu = process.cpu_percent()
+        except (SystemError, OSError):
+            pytest.skip("psutil CPU monitoring not available in this environment")
         
         # Make CPU-intensive requests
         for i in range(10):
@@ -437,10 +443,11 @@ class TestResourceUtilization:
                 # Verify response contains expected data without excessive overhead
                 response_size = len(response.content)
                 text_size = len(text)
-                
+
                 # Response should be reasonable size relative to input
-                # (allowing for JSON overhead and metadata)
-                assert response_size < text_size * 3
+                # (allowing for JSON overhead and metadata; minimum floor of 500 bytes
+                # accounts for fixed JSON response structure regardless of text size)
+                assert response_size < max(text_size * 3, 500)
 
 
 if __name__ == "__main__":

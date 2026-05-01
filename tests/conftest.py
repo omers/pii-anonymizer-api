@@ -2,6 +2,14 @@
 Pytest configuration and shared fixtures for the PII Anonymizer API tests.
 """
 
+import warnings
+
+# Suppress third-party DeprecationWarnings that fire at import time (before
+# pytest's own filterwarnings settings take effect).
+warnings.filterwarnings("ignore", category=DeprecationWarning, module=r"spacy.*")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module=r"weasel.*")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module=r"click.*")
+
 import pytest
 import asyncio
 from unittest.mock import Mock, patch

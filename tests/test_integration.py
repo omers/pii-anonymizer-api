@@ -21,7 +21,7 @@ except ImportError:
                 self.text = text
                 self.items = items or []
 
-from main import app
+from main import app, Config
 
 
 class TestRealWorldScenarios:
