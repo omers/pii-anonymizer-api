@@ -40,7 +40,7 @@ Pygments==2.19.2
 python-multipart==0.0.20
 PyYAML==6.0.3
 regex==2025.9.18
-requests==2.32.5
+requests==2.33.0
 requests-file==2.1.0
 rich==14.1.0
 setuptools==80.9.0
