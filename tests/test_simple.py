@@ -181,30 +181,32 @@ class TestErrorHandling:
         response = self.client.post("/anonymize", content=b"text=test")
         assert response.status_code == 422
     
+    @patch('main.anonymizer_engine')
     @patch('main.analyzer_engine')
-    def test_analyzer_exception(self, mock_analyzer):
+    def test_analyzer_exception(self, mock_analyzer, mock_anonymizer):
         """Test handling of analyzer exceptions."""
         mock_analyzer.analyze.side_effect = ValueError("Test error")
-        
+
         response = self.client.post("/anonymize", json={
             "text": "test text"
         })
-        
+
         # All exceptions in the anonymize endpoint get caught and converted to 500 HTTPException
         assert response.status_code == 500
         data = response.json()
         assert "detail" in data
         assert "Anonymization failed" in data["detail"]
-    
+
+    @patch('main.anonymizer_engine')
     @patch('main.analyzer_engine')
-    def test_general_exception(self, mock_analyzer):
+    def test_general_exception(self, mock_analyzer, mock_anonymizer):
         """Test handling of general exceptions."""
         mock_analyzer.analyze.side_effect = RuntimeError("Unexpected error")
-        
+
         response = self.client.post("/anonymize", json={
             "text": "test text"
         })
-        
+
         assert response.status_code == 500
         data = response.json()
         assert "detail" in data
