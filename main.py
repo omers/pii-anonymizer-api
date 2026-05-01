@@ -19,11 +19,13 @@ except ImportError:
     try:
         from presidio_anonymizer import OperatorConfig
     except ImportError:
-        # Create a mock class if neither import works
-        class OperatorConfig:
+
+        class _OperatorConfigFallback:
             def __init__(self, operator_name, params=None):
                 self.operator_name = operator_name
                 self.params = params or {}
+
+        OperatorConfig = _OperatorConfigFallback
 
 
 # Configure logging
@@ -374,7 +376,7 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
         # Anonymize text
         anonymized_result = anonymizer_engine.anonymize(
             text=request.text,
-            analyzer_results=analyzer_results,
+            analyzer_results=analyzer_results,  # type: ignore[arg-type]
             operators=operators if operators else None,
         )
 

@@ -458,41 +458,39 @@ class TestErrorRecoveryAndResilience:
 
         results = []
 
-        def make_request(request_id):
-            with patch("main.analyzer_engine") as mock_analyzer, patch(
-                "main.anonymizer_engine"
-            ) as mock_anonymizer:
+        # Patch once for all threads: unittest.mock.patch is not thread-safe when
+        # multiple threads patch the same module global concurrently.
+        with patch("main.analyzer_engine") as mock_analyzer, patch(
+            "main.anonymizer_engine"
+        ) as mock_anonymizer:
 
-                # Simulate some processing time
-                def slow_analyze(*args, **kwargs):
-                    time.sleep(0.1)
-                    return [RecognizerResult("PERSON", 0, 10, 0.85)]
+            def slow_analyze(*args, **kwargs):
+                time.sleep(0.1)
+                return [RecognizerResult("PERSON", 0, 10, 0.85)]
 
-                mock_analyzer.analyze.side_effect = slow_analyze
+            mock_analyzer.analyze.side_effect = slow_analyze
+
+            def anonymize_side_effect(text, analyzer_results=None, operators=None, **kwargs):
                 mock_result = Mock()
-                mock_result.text = f"Processed request {request_id}"
-                mock_anonymizer.anonymize.return_value = mock_result
+                mock_result.text = text.replace("Test text for request ", "Processed request ")
+                return mock_result
 
+            mock_anonymizer.anonymize.side_effect = anonymize_side_effect
+
+            def make_request(request_id):
                 response = self.client.post(
                     "/anonymize", json={"text": f"Test text for request {request_id}"}
                 )
                 results.append((request_id, response.status_code))
 
-        # Create multiple concurrent requests
-        threads = []
-        for i in range(5):
-            thread = threading.Thread(target=make_request, args=(i,))
-            threads.append(thread)
+            threads = [
+                threading.Thread(target=make_request, args=(i,)) for i in range(5)
+            ]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
 
-        # Start all threads
-        for thread in threads:
-            thread.start()
-
-        # Wait for completion
-        for thread in threads:
-            thread.join()
-
-        # Verify all requests completed successfully
         assert len(results) == 5
         assert all(status == 200 for _, status in results)
 
