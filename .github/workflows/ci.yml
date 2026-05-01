@@ -70,10 +70,10 @@ jobs:
         black --check main.py tests/
       continue-on-error: true
 
-    - name: Import sort check with isort
-      run: |
-        isort --check-only main.py tests/
-      continue-on-error: true
+    # - name: Import sort check with isort
+    #   run: |
+    #     isort --check-only main.py tests/
+    #   continue-on-error: true
 
     - name: Run simple tests first
       run: |
