@@ -64,7 +64,6 @@ class EntityType(str, Enum):
     def __str__(self) -> str:
         return self.value
 
-
     PERSON = "PERSON"
     EMAIL_ADDRESS = "EMAIL_ADDRESS"
     PHONE_NUMBER = "PHONE_NUMBER"
@@ -363,7 +362,9 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
                 }
             elif request.config.strategy == AnonymizationStrategy.ENCRYPT:
                 operators = {
-                    "DEFAULT": OperatorConfig("encrypt", {"key": os.getenv("ANONYMIZER_ENCRYPT_KEY", "")})
+                    "DEFAULT": OperatorConfig(
+                        "encrypt", {"key": os.getenv("ANONYMIZER_ENCRYPT_KEY", "")}
+                    )
                 }
                 if not os.getenv("ANONYMIZER_ENCRYPT_KEY"):
                     raise ValueError(
@@ -515,7 +516,9 @@ if os.getenv("ENVIRONMENT", "development") in ["development", "testing"]:
             elif isinstance(e, RuntimeError):
                 return JSONResponse(
                     status_code=500,
-                    content=ErrorResponse(error="RuntimeError", message=str(e)).model_dump(),
+                    content=ErrorResponse(
+                        error="RuntimeError", message=str(e)
+                    ).model_dump(),
                 )
             else:
                 return JSONResponse(

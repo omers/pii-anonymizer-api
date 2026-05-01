@@ -15,6 +15,7 @@ import asyncio
 from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
 from presidio_analyzer import RecognizerResult
+
 try:
     from presidio_anonymizer.entities import AnonymizeResult
 except ImportError:
@@ -27,6 +28,7 @@ except ImportError:
             def __init__(self, text="", items=None):
                 self.text = text
                 self.items = items or []
+
 
 from main import app, AnonymizationStrategy, EntityType
 
@@ -55,30 +57,10 @@ def sample_text():
 def sample_analyzer_results():
     """Sample analyzer results for testing."""
     return [
-        RecognizerResult(
-            entity_type="PERSON",
-            start=0,
-            end=8,
-            score=0.85
-        ),
-        RecognizerResult(
-            entity_type="EMAIL_ADDRESS",
-            start=20,
-            end=42,
-            score=0.95
-        ),
-        RecognizerResult(
-            entity_type="PHONE_NUMBER",
-            start=63,
-            end=75,
-            score=0.90
-        ),
-        RecognizerResult(
-            entity_type="LOCATION",
-            start=89,
-            end=119,
-            score=0.80
-        )
+        RecognizerResult(entity_type="PERSON", start=0, end=8, score=0.85),
+        RecognizerResult(entity_type="EMAIL_ADDRESS", start=20, end=42, score=0.95),
+        RecognizerResult(entity_type="PHONE_NUMBER", start=63, end=75, score=0.90),
+        RecognizerResult(entity_type="LOCATION", start=89, end=119, score=0.80),
     ]
 
 
@@ -93,22 +75,23 @@ def sample_anonymize_result():
 @pytest.fixture
 def mock_engines():
     """Mock both analyzer and anonymizer engines."""
-    with patch('main.analyzer_engine') as mock_analyzer, \
-         patch('main.anonymizer_engine') as mock_anonymizer:
+    with patch("main.analyzer_engine") as mock_analyzer, patch(
+        "main.anonymizer_engine"
+    ) as mock_anonymizer:
         yield mock_analyzer, mock_anonymizer
 
 
 @pytest.fixture
 def mock_analyzer_engine():
     """Mock analyzer engine only."""
-    with patch('main.analyzer_engine') as mock_analyzer:
+    with patch("main.analyzer_engine") as mock_analyzer:
         yield mock_analyzer
 
 
 @pytest.fixture
 def mock_anonymizer_engine():
     """Mock anonymizer engine only."""
-    with patch('main.anonymizer_engine') as mock_anonymizer:
+    with patch("main.anonymizer_engine") as mock_anonymizer:
         yield mock_anonymizer
 
 
@@ -133,8 +116,8 @@ def valid_anonymize_request():
         "config": {
             "strategy": "replace",
             "entities_to_anonymize": ["PERSON", "EMAIL_ADDRESS"],
-            "replacement_text": "[REDACTED]"
-        }
+            "replacement_text": "[REDACTED]",
+        },
     }
 
 
@@ -159,7 +142,7 @@ def multilingual_texts():
         "es": "Mi nombre es Juan García y mi correo es juan@ejemplo.com",
         "fr": "Je m'appelle Pierre Dupont et mon email est pierre@exemple.com",
         "de": "Mein Name ist Hans Mueller und meine E-Mail ist hans@beispiel.com",
-        "it": "Il mio nome è Marco Rossi e la mia email è marco@esempio.com"
+        "it": "Il mio nome è Marco Rossi e la mia email è marco@esempio.com",
     }
 
 
@@ -188,36 +171,44 @@ def performance_test_texts():
         "small": "John Doe email: john@example.com",
         "medium": "John Doe email: john@example.com. " * 50,
         "large": "John Doe email: john@example.com. " * 500,
-        "xlarge": "John Doe email: john@example.com. " * 1000
+        "xlarge": "John Doe email: john@example.com. " * 1000,
     }
 
 
 @pytest.fixture
 def mock_successful_analysis(sample_analyzer_results, sample_anonymize_result):
     """Mock successful analysis and anonymization."""
+
     def _mock_successful_analysis(mock_analyzer, mock_anonymizer):
         mock_analyzer.analyze.return_value = sample_analyzer_results
         mock_anonymizer.anonymize.return_value = sample_anonymize_result
         return mock_analyzer, mock_anonymizer
+
     return _mock_successful_analysis
 
 
 @pytest.fixture
 def mock_failed_analysis():
     """Mock failed analysis."""
+
     def _mock_failed_analysis(mock_analyzer, exception=Exception("Analysis failed")):
         mock_analyzer.analyze.side_effect = exception
         return mock_analyzer
+
     return _mock_failed_analysis
 
 
 @pytest.fixture
 def mock_failed_anonymization(sample_analyzer_results):
     """Mock failed anonymization."""
-    def _mock_failed_anonymization(mock_analyzer, mock_anonymizer, exception=Exception("Anonymization failed")):
+
+    def _mock_failed_anonymization(
+        mock_analyzer, mock_anonymizer, exception=Exception("Anonymization failed")
+    ):
         mock_analyzer.analyze.return_value = sample_analyzer_results
         mock_anonymizer.anonymize.side_effect = exception
         return mock_analyzer, mock_anonymizer
+
     return _mock_failed_anonymization
 
 
@@ -229,7 +220,7 @@ def test_config():
         "supported_languages": ["en", "es", "fr", "de", "it"],
         "default_language": "en",
         "test_timeout": 30,
-        "performance_threshold_ms": 1000
+        "performance_threshold_ms": 1000,
     }
 
 
@@ -238,18 +229,18 @@ def log_capture():
     """Capture log messages during tests."""
     import logging
     from io import StringIO
-    
+
     log_capture_string = StringIO()
     ch = logging.StreamHandler(log_capture_string)
     ch.setLevel(logging.DEBUG)
-    
+
     # Get the root logger
     logger = logging.getLogger()
     logger.addHandler(ch)
     logger.setLevel(logging.DEBUG)
-    
+
     yield log_capture_string
-    
+
     # Clean up
     logger.removeHandler(ch)
 
@@ -259,7 +250,7 @@ def temp_file():
     """Create a temporary file for testing."""
     import tempfile
     import os
-    
+
     fd, path = tempfile.mkstemp()
     try:
         yield path
@@ -279,20 +270,23 @@ pytest.mark.slow = pytest.mark.slow
 def assert_valid_response_structure(response_data):
     """Assert that response has valid structure."""
     required_fields = [
-        "anonymized_text", "detected_entities", "processing_time_ms",
-        "original_length", "anonymized_length"
+        "anonymized_text",
+        "detected_entities",
+        "processing_time_ms",
+        "original_length",
+        "anonymized_length",
     ]
-    
+
     for field in required_fields:
         assert field in response_data, f"Missing required field: {field}"
-    
+
     # Validate types
     assert isinstance(response_data["anonymized_text"], str)
     assert isinstance(response_data["detected_entities"], list)
     assert isinstance(response_data["processing_time_ms"], (int, float))
     assert isinstance(response_data["original_length"], int)
     assert isinstance(response_data["anonymized_length"], int)
-    
+
     # Validate entity structure
     for entity in response_data["detected_entities"]:
         entity_fields = ["entity_type", "start", "end", "score", "text"]
@@ -303,10 +297,10 @@ def assert_valid_response_structure(response_data):
 def assert_valid_health_response(response_data):
     """Assert that health response has valid structure."""
     required_fields = ["status", "timestamp", "version", "dependencies"]
-    
+
     for field in required_fields:
         assert field in response_data, f"Missing required field: {field}"
-    
+
     assert response_data["status"] in ["healthy", "unhealthy"]
     assert isinstance(response_data["dependencies"], dict)
 
