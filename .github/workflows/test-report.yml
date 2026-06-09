@@ -91,7 +91,7 @@ jobs:
         done
         
         # Find coverage.xml files
-        find coverage-reports -name "coverage.xml" -type f | head -1 | xargs -I {} cp {} ./coverage.xml || echo "No coverage.xml found"
+        find coverage-reports -name "coverage.xml" -type f | head -1 | xargs -I {} cp -f {} ./coverage.xml || echo "No coverage.xml found"
 
     - name: Code Coverage Summary
       uses: irongut/CodeCoverageSummary@v1.3.0
