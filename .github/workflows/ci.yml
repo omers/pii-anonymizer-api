@@ -10,6 +10,7 @@ on:
 env:
   PYTHONUNBUFFERED: 1
   PYTHONDONTWRITEBYTECODE: 1
+  ENVIRONMENT: testing
 
 jobs:
   test:
@@ -118,7 +119,7 @@ jobs:
 
     - name: Publish test results
       uses: EnricoMi/publish-unit-test-result-action@v2
-      if: always() && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      if: always() && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
       with:
         files: pytest-results.xml
         check_name: "Test Results (Python ${{ matrix.python-version }})"
