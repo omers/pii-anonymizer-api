@@ -264,7 +264,7 @@ class TestValidationAndErrorHandling:
         assert response.status_code == 422
 
     def test_custom_error_handler(self):
-        """Test that unexpected errors are returned as 500 with detail message"""
+        """Test that ValueError from analyzer routes to the registered handler → 400"""
         with patch("main.analyzer_engine") as mock_analyzer, patch(
             "main.anonymizer_engine"
         ):
@@ -272,10 +272,11 @@ class TestValidationAndErrorHandling:
 
             response = client.post("/anonymize", json={"text": "Test text"})
 
-            assert response.status_code == 500
+            assert response.status_code == 400
             error_data = response.json()
-            assert "detail" in error_data
-            assert "Test error" in error_data["detail"]
+            assert "error" in error_data
+            assert "message" in error_data
+            assert "Test error" in error_data["message"]
 
 
 class TestConfigurationAndModels:
