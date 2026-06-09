@@ -9,7 +9,7 @@ charset-normalizer==3.4.3
 click==8.3.0
 cloudpathlib==0.22.0
 confection==0.1.5
-cryptography==44.0.3
+cryptography==46.0.7
 cymem==2.0.11
 en_core_web_lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl#sha256=293e9547a655b25499198ab15a525b05b9407a75f10255e405e8c3854329ab63
 fastapi==0.136.1
