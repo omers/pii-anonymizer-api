@@ -218,7 +218,7 @@ jobs:
         cat summary.md
 
     - name: Upload Summary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       with:
         name: ci-summary
         path: summary.md
