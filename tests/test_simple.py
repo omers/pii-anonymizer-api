@@ -183,11 +183,12 @@ class TestErrorHandling:
 
         response = self.client.post("/anonymize", json={"text": "test text"})
 
-        # All exceptions in the anonymize endpoint get caught and converted to 500 HTTPException
-        assert response.status_code == 500
+        # ValueError propagates to the registered exception handler → 400
+        assert response.status_code == 400
         data = response.json()
-        assert "detail" in data
-        assert "Anonymization failed" in data["detail"]
+        assert "error" in data
+        assert "message" in data
+        assert "Test error" in data["message"]
 
     @patch("main.anonymizer_engine")
     @patch("main.analyzer_engine")

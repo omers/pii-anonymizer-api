@@ -10,11 +10,15 @@ on:
 env:
   PYTHONUNBUFFERED: 1
   PYTHONDONTWRITEBYTECODE: 1
+  ENVIRONMENT: testing
 
 jobs:
   test:
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      checks: write
+      pull-requests: write
     strategy:
       fail-fast: false
       matrix:
@@ -118,7 +122,8 @@ jobs:
 
     - name: Publish test results
       uses: EnricoMi/publish-unit-test-result-action@v2
-      if: always() && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      if: always() && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      continue-on-error: true
       with:
         files: pytest-results.xml
         check_name: "Test Results (Python ${{ matrix.python-version }})"

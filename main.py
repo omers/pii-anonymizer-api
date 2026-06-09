@@ -1,9 +1,12 @@
+import asyncio
 import logging
 import os
 import time
 from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
 from enum import Enum
+
+import psutil
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,7 +33,8 @@ except ImportError:
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -42,6 +46,7 @@ class Config:
     DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "en")
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+    CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
     MAX_TEXT_LENGTH = int(os.getenv("MAX_TEXT_LENGTH", "10000"))
     SUPPORTED_LANGUAGES = os.getenv("SUPPORTED_LANGUAGES", "en,es,fr,de,it").split(",")
 
@@ -94,7 +99,9 @@ class AnonymizationConfig(BaseModel):
         description="Specific entities to anonymize. If None, all detected entities will be anonymized",
     )
     replacement_text: Optional[str] = Field(
-        default=None, description="Custom replacement text for REPLACE strategy"
+        default=None,
+        max_length=1000,
+        description="Custom replacement text for REPLACE strategy",
     )
     mask_char: str = Field(
         default="*", description="Character to use for MASK strategy"
@@ -102,6 +109,16 @@ class AnonymizationConfig(BaseModel):
     hash_type: str = Field(
         default="sha256", description="Hash algorithm for HASH strategy"
     )
+
+    @field_validator("hash_type")
+    @classmethod
+    def validate_hash_type(cls, v: str) -> str:
+        allowed = {"sha256", "sha384", "sha512", "sha3_256", "sha3_384", "sha3_512"}
+        if v not in allowed:
+            raise ValueError(
+                f"hash_type must be one of: {', '.join(sorted(allowed))}"
+            )
+        return v
 
 
 class AnonymizeRequest(BaseModel):
@@ -212,11 +229,10 @@ app = FastAPI(
 )
 
 # Add CORS middleware
-_cors_allow_credentials = Config.CORS_ORIGINS != ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=Config.CORS_ORIGINS,
-    allow_credentials=_cors_allow_credentials,
+    allow_credentials=Config.CORS_ALLOW_CREDENTIALS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -320,18 +336,20 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
             f"Processing anonymization request for text of length {len(request.text)}"
         )
 
-        # Analyze text for PII entities
-        analyzer_results = analyzer_engine.analyze(
-            text=request.text, language=request.language
+        # Analyze text for PII entities (CPU-bound — offload to thread pool)
+        loop = asyncio.get_running_loop()
+        analyzer_results = await loop.run_in_executor(
+            None,
+            lambda: analyzer_engine.analyze(text=request.text, language=request.language),
         )
 
         # Filter entities if specific types are requested
-        if request.config and request.config.entities_to_anonymize:
+        if request.config and request.config.entities_to_anonymize is not None:
+            allowed = {e.value for e in request.config.entities_to_anonymize}
             analyzer_results = [
                 result
                 for result in analyzer_results
-                if result.entity_type
-                in [e.value for e in request.config.entities_to_anonymize]
+                if result.entity_type in allowed
             ]
 
         # Configure anonymization operators
@@ -353,7 +371,7 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
                 operators = {
                     "DEFAULT": OperatorConfig(
                         "mask",
-                        {"masking_char": request.config.mask_char, "chars_to_mask": -1},
+                        {"masking_char": request.config.mask_char},
                     )
                 }
             elif request.config.strategy == AnonymizationStrategy.HASH:
@@ -363,21 +381,24 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
                     )
                 }
             elif request.config.strategy == AnonymizationStrategy.ENCRYPT:
-                operators = {
-                    "DEFAULT": OperatorConfig(
-                        "encrypt", {"key": os.getenv("ANONYMIZER_ENCRYPT_KEY", "")}
-                    )
-                }
-                if not os.getenv("ANONYMIZER_ENCRYPT_KEY"):
+                encrypt_key = os.getenv("ANONYMIZER_ENCRYPT_KEY")
+                if not encrypt_key:
                     raise ValueError(
                         "ENCRYPT strategy requires ANONYMIZER_ENCRYPT_KEY environment variable to be set"
                     )
+                operators = {
+                    "DEFAULT": OperatorConfig("encrypt", {"key": encrypt_key})
+                }
 
-        # Anonymize text
-        anonymized_result = anonymizer_engine.anonymize(
-            text=request.text,
-            analyzer_results=analyzer_results,  # type: ignore[arg-type]
-            operators=operators if operators else None,
+        # Anonymize text (CPU-bound — offload to thread pool)
+        _ops = operators if operators else None
+        anonymized_result = await loop.run_in_executor(
+            None,
+            lambda: anonymizer_engine.anonymize(
+                text=request.text,
+                analyzer_results=analyzer_results,  # type: ignore[arg-type]
+                operators=_ops,
+            ),
         )
 
         # Prepare detected entities for response
@@ -407,6 +428,8 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
 
     except HTTPException:
         raise
+    except ValueError:
+        raise
     except Exception as e:
         logger.error(f"Error during anonymization: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -422,9 +445,6 @@ async def get_metrics():
     Get application metrics for monitoring.
     """
     try:
-        import psutil
-        import os
-
         process = psutil.Process(os.getpid())
 
         return {
@@ -489,7 +509,7 @@ async def get_info():
 
 
 # Test endpoints (only available in development/testing)
-if os.getenv("ENVIRONMENT", "development") in ["development", "testing"]:
+if os.getenv("ENVIRONMENT", "production") in ["development", "testing"]:
 
     @app.get("/test/error/{error_type}", tags=["Testing"], include_in_schema=False)
     async def test_error_handler(error_type: str):

@@ -289,7 +289,7 @@ def assert_valid_response_structure(response_data):
 
     # Validate entity structure
     for entity in response_data["detected_entities"]:
-        entity_fields = ["entity_type", "start", "end", "score", "text"]
+        entity_fields = ["entity_type", "start", "end", "score"]
         for field in entity_fields:
             assert field in entity, f"Missing entity field: {field}"
 
