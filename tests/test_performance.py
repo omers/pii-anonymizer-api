@@ -359,13 +359,18 @@ class TestScalabilityLimits:
                 assert response.status_code == 200
                 response_times.append(end_time - start_time)
 
-        # Verify consistent performance
-        avg_time = sum(response_times) / len(response_times)
-        max_time = max(response_times)
-        min_time = min(response_times)
+        # Verify consistent performance. The first request absorbs lazy
+        # imports and engine warm-up and runs an order of magnitude slower
+        # than steady state, so including it measures start-up cost rather
+        # than response-time consistency.
+        steady_state = response_times[1:]
+        avg_time = sum(steady_state) / len(steady_state)
+        max_time = max(steady_state)
 
-        # Performance should be consistent
-        assert max_time < avg_time * 3  # Max shouldn't be more than 3x average
+        # Performance should be consistent. Steady-state requests land in the
+        # sub-millisecond range, where a bare ratio is scheduler noise, so pair
+        # it with an absolute floor.
+        assert max_time < max(avg_time * 3, 0.05)
         assert avg_time < 0.1  # Average should be under 100ms
 
 

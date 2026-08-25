@@ -308,8 +308,10 @@ curl -X POST "http://localhost:8000/anonymize" \
     "strategy": "replace|redact|mask|hash|encrypt",
     "entities_to_anonymize": ["PERSON", "EMAIL_ADDRESS", "..."],
     "replacement_text": "string (for replace strategy)",
-    "mask_char": "string (for mask strategy, default: '*')",
-    "hash_type": "string (for hash strategy, default: 'sha256')"
+    "mask_char": "single character (for mask strategy, default: '*')",
+    "chars_to_mask": "integer >= 1 (for mask strategy, default: mask the whole entity)",
+    "mask_from_end": "boolean (for mask strategy, mask the tail instead of the head, default: false)",
+    "hash_type": "sha256|sha512 (for hash strategy, default: 'sha256')"
   }
 }
 ```
