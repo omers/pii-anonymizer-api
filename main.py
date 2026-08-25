@@ -375,11 +375,20 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
                     )
                 }
             elif request.config.strategy == AnonymizationStrategy.HASH:
-                operators = {
-                    "DEFAULT": OperatorConfig(
-                        "hash", {"hash_type": request.config.hash_type}
-                    )
+                # presidio-anonymizer >= 2.2.361 salts each entity with a
+                # random 32-byte salt, so hashes differ between requests. Set
+                # ANONYMIZER_HASH_SALT to keep them stable across requests.
+                hash_params: Dict[str, Any] = {
+                    "hash_type": request.config.hash_type
                 }
+                hash_salt = os.getenv("ANONYMIZER_HASH_SALT")
+                if hash_salt:
+                    if len(hash_salt.encode()) < 16:
+                        raise ValueError(
+                            "ANONYMIZER_HASH_SALT must be at least 16 bytes"
+                        )
+                    hash_params["salt"] = hash_salt
+                operators = {"DEFAULT": OperatorConfig("hash", hash_params)}
             elif request.config.strategy == AnonymizationStrategy.ENCRYPT:
                 encrypt_key = os.getenv("ANONYMIZER_ENCRYPT_KEY")
                 if not encrypt_key:
