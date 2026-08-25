@@ -8,57 +8,57 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://hub.docker.com/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-> 🚀 **The most comprehensive open-source PII anonymization API** - Protect sensitive data in logs, documents, and databases with enterprise-grade privacy controls.
+> **The most comprehensive open-source PII anonymization API** - Protect sensitive data in logs, documents, and databases with enterprise-grade privacy controls.
 
-**⭐ Star this repo if it helps you protect user privacy!**
+**Star this repo if it helps you protect user privacy!**
 
 A production-ready FastAPI service for anonymizing Personally Identifiable Information (PII) in text data using Microsoft Presidio. Perfect for **GDPR compliance**, **data privacy**, **log sanitization**, and **secure data processing**.
 
-## 📚 Table of Contents
+## Table of Contents
 
-- [✨ Why Choose This PII Anonymizer?](#-why-choose-this-pii-anonymizer)
-- [🚀 Key Features](#-key-features)
-- [📋 Supported PII Entity Types](#-supported-pii-entity-types)
-- [⚡ Quick Start (30 seconds)](#-quick-start-30-seconds)
-- [🔧 Configuration](#-configuration)
-- [📖 API Usage Guide](#-api-usage-guide)
-- [🔍 Complete API Reference](#-complete-api-reference)
-- [🧪 Testing](#-testing)
-- [📊 Monitoring and Metrics](#-monitoring-and-metrics)
-- [🐳 Docker Deployment](#-docker-deployment)
-- [🔧 Development](#-development)
-- [📈 Performance](#-performance)
-- [🛡 Security Considerations](#-security-considerations)
-- [🚀 Real-World Use Cases](#-real-world-use-cases)
-- [🌟 Why Developers Love This API](#-why-developers-love-this-api)
-- [🤝 Contributing & Community](#-contributing--community)
+- [Why Choose This PII Anonymizer?](#why-choose-this-pii-anonymizer)
+- [Key Features](#key-features)
+- [Supported PII Entity Types](#supported-pii-entity-types)
+- [Quick Start (30 seconds)](#quick-start-30-seconds)
+- [Configuration](#configuration)
+- [API Usage Guide](#api-usage-guide)
+- [Complete API Reference](#complete-api-reference)
+- [Testing](#testing)
+- [Monitoring and Metrics](#monitoring-and-metrics)
+- [Docker Deployment](#docker-deployment)
+- [Development](#development)
+- [Performance](#performance)
+- [Security Considerations](#security-considerations)
+- [Real-World Use Cases](#real-world-use-cases)
+- [Why Developers Love This API](#why-developers-love-this-api)
+- [Contributing & Community](#contributing--community)
 
-## ✨ Why Choose This PII Anonymizer?
+## Why Choose This PII Anonymizer?
 
-🎯 **Zero-Config Setup** - Works out of the box with sensible defaults  
-🔐 **Enterprise Security** - Bank-grade anonymization algorithms  
-⚡ **High Performance** - Process 1000+ requests/second  
-🌍 **Multi-Language** - Supports 5 languages (EN, ES, FR, DE, IT)  
-🐳 **Docker Ready** - One-command deployment  
-📊 **Built-in Monitoring** - Real-time metrics and health checks  
-🧪 **Battle-Tested** - 80%+ test coverage with 120+ test cases  
-📖 **Developer Friendly** - Interactive API docs and examples  
+**Zero-Config Setup** - Works out of the box with sensible defaults  
+**Enterprise Security** - Bank-grade anonymization algorithms  
+**High Performance** - Process 1000+ requests/second  
+**Multi-Language** - Supports 5 languages (EN, ES, FR, DE, IT)  
+**Docker Ready** - One-command deployment  
+**Built-in Monitoring** - Real-time metrics and health checks  
+**Battle-Tested** - 80%+ test coverage with 120+ test cases  
+**Developer Friendly** - Interactive API docs and examples  
 
-## 🚀 Key Features
+## Key Features
 
-### 🔍 **Advanced PII Detection**
+### **Advanced PII Detection**
 - **13+ Entity Types**: Names, emails, phones, SSNs, credit cards, addresses, IPs, and more
 - **High Accuracy**: 95%+ detection rate with configurable confidence thresholds
 - **Custom Entities**: Add your own PII patterns and recognizers
 
-### 🛡️ **Multiple Anonymization Strategies**
+### **Multiple Anonymization Strategies**
 - **Replace** - Substitute with placeholders (`John Doe` → `<PERSON>`)
 - **Redact** - Remove completely (`john@email.com` → ``)
 - **Mask** - Hide with characters (`555-1234` → `***-****`)
 - **Hash** - Cryptographic hashing (`data` → `a1b2c3...`)
 - **Encrypt** - Reversible encryption for authorized access
 
-### 🌐 **Production-Ready Architecture**
+### **Production-Ready Architecture**
 - **RESTful API** with OpenAPI/Swagger documentation
 - **Structured Logging** with configurable levels
 - **Error Handling** with detailed HTTP status codes
@@ -66,7 +66,7 @@ A production-ready FastAPI service for anonymizing Personally Identifiable Infor
 - **CORS Support** for web applications
 - **Rate Limiting** and input validation
 
-## 📋 Supported PII Entity Types
+## Supported PII Entity Types
 
 - **Personal**: PERSON, DATE_TIME, LOCATION, ORGANIZATION
 - **Contact**: EMAIL_ADDRESS, PHONE_NUMBER, URL
@@ -74,9 +74,9 @@ A production-ready FastAPI service for anonymizing Personally Identifiable Infor
 - **Government**: US_SSN, US_PASSPORT, US_DRIVER_LICENSE
 - **Technical**: IP_ADDRESS
 
-## ⚡ Quick Start (30 seconds)
+## Quick Start (30 seconds)
 
-### 🐳 Option 1: Docker (Recommended)
+### Option 1: Docker (Recommended)
 ```bash
 # Method 1: Using docker-compose (easiest)
 git clone https://github.com/omers/pii-anonymizer-api.git
@@ -93,7 +93,7 @@ make docker-run
 docker run -p 8000:8000 ghcr.io/omers/pii-anonymizer-api:latest
 ```
 
-### 🐍 Option 2: Python Setup
+### Option 2: Python Setup
 ```bash
 # 1. Clone and setup
 git clone https://github.com/omers/pii-anonymizer-api.git
@@ -108,7 +108,7 @@ make install
 make dev
 ```
 
-### 📦 Option 3: Manual Installation
+### Option 3: Manual Installation
 <details>
 <summary>Click to expand manual installation steps</summary>
 
@@ -134,7 +134,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 </details>
 
-### ✅ Verify Installation
+### Verify Installation
 ```bash
 # Check if API is running
 curl http://localhost:8000/health
@@ -143,11 +143,11 @@ curl http://localhost:8000/health
 # {"status":"healthy","timestamp":"2024-01-20 10:30:45 UTC","version":"2.0.0"}
 ```
 
-**🎉 That's it! Your API is running at http://localhost:8000**
+**That's it! Your API is running at http://localhost:8000**
 
-📖 **Interactive Documentation**: http://localhost:8000/docs
+**Interactive Documentation**: http://localhost:8000/docs
 
-## 🔧 Configuration
+## Configuration
 
 Create a `.env` file (copy from `env.example`) to customize configuration:
 
@@ -166,9 +166,9 @@ HOST=0.0.0.0
 PORT=8000
 ```
 
-## 📖 API Usage Guide
+## API Usage Guide
 
-### 🔥 Try It Now (Copy & Paste)
+### Try It Now (Copy & Paste)
 
 **1. Basic Anonymization** (Most Common)
 ```bash
@@ -180,7 +180,7 @@ curl -X POST "http://localhost:8000/anonymize" \
 ```
 
 <details>
-<summary>📋 Click to see the response</summary>
+<summary>Click to see the response</summary>
 
 ```json
 {
@@ -263,7 +263,7 @@ curl -X POST "http://localhost:8000/anonymize" \
      }'
 ```
 
-### 🛡️ Anonymization Strategies Explained
+### Anonymization Strategies Explained
 
 | Strategy | Description | Example | Use Case |
 |----------|-------------|---------|----------|
@@ -273,7 +273,7 @@ curl -X POST "http://localhost:8000/anonymize" \
 | **hash** | Cryptographic hashing | `secret` → `2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b` | Consistent anonymization, irreversible |
 | **encrypt** | Reversible encryption | `data` → `encrypted_string` | Authorized access possible |
 
-### 🌍 Supported Languages
+### Supported Languages
 
 | Language | Code | Example Text |
 |----------|------|--------------|
@@ -283,21 +283,21 @@ curl -X POST "http://localhost:8000/anonymize" \
 | German | `de` | "Mein Name ist Hans Mueller" |
 | Italian | `it` | "Il mio nome è Marco Rossi" |
 
-## 🔍 Complete API Reference
+## Complete API Reference
 
 | Endpoint | Method | Description | Try It |
 |----------|--------|-------------|--------|
 | `/health` | GET | Health check and service status | `curl http://localhost:8000/health` |
-| `/anonymize` | POST | Anonymize text data | See examples above ⬆️ |
+| `/anonymize` | POST | Anonymize text data | See examples above |
 | `/metrics` | GET | System and application metrics | `curl http://localhost:8000/metrics` |
 | `/info` | GET | API information and configuration | `curl http://localhost:8000/info` |
 | `/docs` | GET | Interactive API documentation (Swagger UI) | Open http://localhost:8000/docs |
 | `/redoc` | GET | Alternative API documentation (ReDoc) | Open http://localhost:8000/redoc |
 
-### 🔧 Request/Response Models
+### Request/Response Models
 
 <details>
-<summary>📝 Click to see detailed API schemas</summary>
+<summary>Click to see detailed API schemas</summary>
 
 **Anonymize Request**:
 ```json
@@ -308,8 +308,10 @@ curl -X POST "http://localhost:8000/anonymize" \
     "strategy": "replace|redact|mask|hash|encrypt",
     "entities_to_anonymize": ["PERSON", "EMAIL_ADDRESS", "..."],
     "replacement_text": "string (for replace strategy)",
-    "mask_char": "string (for mask strategy, default: '*')",
-    "hash_type": "string (for hash strategy, default: 'sha256')"
+    "mask_char": "single character (for mask strategy, default: '*')",
+    "chars_to_mask": "integer >= 1 (for mask strategy, default: mask the whole entity)",
+    "mask_from_end": "boolean (for mask strategy, mask the tail instead of the head, default: false)",
+    "hash_type": "sha256|sha512 (for hash strategy, default: 'sha256')"
   }
 }
 ```
@@ -334,7 +336,7 @@ curl -X POST "http://localhost:8000/anonymize" \
 ```
 </details>
 
-## 🧪 Testing
+## Testing
 
 ### Run All Tests
 ```bash
@@ -364,7 +366,7 @@ pytest -m "performance"    # Performance tests only
 - `tests/test_performance.py` - Performance and load tests
 - `tests/conftest.py` - Shared fixtures and utilities
 
-## 📊 Monitoring and Metrics
+## Monitoring and Metrics
 
 ### Health Check
 ```bash
@@ -385,7 +387,7 @@ curl http://localhost:8000/info
 
 Returns API version, configuration, and supported features.
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 ### Production Deployment
 ```bash
@@ -416,7 +418,7 @@ make docker-run-dev    # Run development container with volume mount
 make docker-clean      # Clean up Docker resources
 ```
 
-## 🔧 Development
+## Development
 
 ### Setup Development Environment
 ```bash
@@ -435,14 +437,14 @@ make check     # Run all quality checks
 pre-commit install
 ```
 
-## 📈 Performance
+## Performance
 
 - **Throughput**: 100+ requests/second
 - **Latency**: <100ms for typical text (1KB)
 - **Memory**: <200MB baseline usage
 - **Scalability**: Horizontal scaling ready
 
-## 🛡 Security Considerations
+## Security Considerations
 
 - Input validation and sanitization
 - Configurable text length limits
@@ -450,37 +452,37 @@ pre-commit install
 - CORS configuration
 - Error message sanitization
 
-## 🚀 Real-World Use Cases
+## Real-World Use Cases
 
-### 🏥 **Healthcare & HIPAA Compliance**
+### **Healthcare & HIPAA Compliance**
 ```bash
 # Anonymize patient records
 curl -X POST "http://localhost:8000/anonymize" \
      -d '{"text": "Patient John Smith (DOB: 1985-03-15, SSN: 123-45-6789) visited on 2024-01-20"}'
 ```
 
-### 🏦 **Financial Services & PCI DSS**
+### **Financial Services & PCI DSS**
 ```bash
 # Sanitize transaction logs
 curl -X POST "http://localhost:8000/anonymize" \
      -d '{"text": "Payment from card 4532-1234-5678-9012 to account john.doe@bank.com"}'
 ```
 
-### 📊 **Log Analysis & GDPR**
+### **Log Analysis & GDPR**
 ```bash
 # Clean application logs
 curl -X POST "http://localhost:8000/anonymize" \
      -d '{"text": "User login: email=user@company.com, ip=192.168.1.100, session=abc123"}'
 ```
 
-### 🎓 **Research & Data Science**
+### **Research & Data Science**
 ```bash
 # Anonymize research data
 curl -X POST "http://localhost:8000/anonymize" \
      -d '{"text": "Survey response from participant Sarah Johnson, age 28, phone 555-0123"}'
 ```
 
-## 🌟 Why Developers Love This API
+## Why Developers Love This API
 
 > **"Saved us weeks of development time. The multi-strategy approach is exactly what we needed for GDPR compliance."**  
 > — Senior Developer at FinTech Startup
@@ -491,21 +493,21 @@ curl -X POST "http://localhost:8000/anonymize" \
 > **"The performance is incredible - processing thousands of log entries per minute without breaking a sweat."**  
 > — Data Engineer at E-commerce Platform
 
-## 🏆 Awards & Recognition
+## Awards & Recognition
 
-- 🥇 **Top 1% FastAPI Projects** on GitHub
-- ⭐ **4.9/5 Stars** from 500+ developers
-- 🏅 **Featured in Awesome Privacy Tools** list
-- 📈 **10M+ API calls** served in production
+- **Top 1% FastAPI Projects** on GitHub
+- **4.9/5 Stars** from 500+ developers
+- **Featured in Awesome Privacy Tools** list
+- **10M+ API calls** served in production
 
-## 🤝 Contributing & Community
+## Contributing & Community
 
-**We ❤️ contributions!** Join our growing community:
+**Contributions welcome!** Join our growing community:
 
-- 🌟 **Star this repo** if it helps you!
-- 🐛 **Report bugs** via [GitHub Issues](https://github.com/omers/pii-anonymizer-api/issues)
-- 💡 **Suggest features** in [Discussions](https://github.com/omers/pii-anonymizer-api/discussions)
-- 🔧 **Submit PRs** - see [Contributing Guide](CONTRIBUTING.md)
+- **Star this repo** if it helps you!
+- **Report bugs** via [GitHub Issues](https://github.com/omers/pii-anonymizer-api/issues)
+- **Suggest features** in [Discussions](https://github.com/omers/pii-anonymizer-api/discussions)
+- **Submit PRs** - see [Contributing Guide](CONTRIBUTING.md)
 
 ### Quick Contribution Steps:
 ```bash
@@ -515,26 +517,26 @@ curl -X POST "http://localhost:8000/anonymize" \
 4. Submit PR with clear description
 ```
 
-## 📈 GitHub Stats
+## GitHub Stats
 
 ![GitHub stars](https://img.shields.io/github/stars/omers/pii-anonymizer-api?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/omers/pii-anonymizer-api?style=social)
 ![GitHub issues](https://img.shields.io/github/issues/omers/pii-anonymizer-api)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/omers/pii-anonymizer-api)
 
-## 📞 Support & Community
+## Support & Community
 
-- 🐛 **Issues**: [GitHub Issues](https://github.com/omers/pii-anonymizer-api/issues)
-- 💡 **Discussions**: [GitHub Discussions](https://github.com/omers/pii-anonymizer-api/discussions)
-- 📖 **Docs**: [API Documentation](http://localhost:8000/docs)
+- **Issues**: [GitHub Issues](https://github.com/omers/pii-anonymizer-api/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/omers/pii-anonymizer-api/discussions)
+- **Docs**: [API Documentation](http://localhost:8000/docs)
 
-## 📝 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file. **Free for commercial use!**
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-Built with ❤️ using:
+Built using:
 - [Microsoft Presidio](https://github.com/microsoft/presidio) - PII detection engine
 - [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
 - [spaCy](https://spacy.io/) - NLP processing
@@ -543,9 +545,9 @@ Built with ❤️ using:
 
 <div align="center">
 
-**⭐ Star this repo if it helps you protect user privacy! ⭐**
+**Star this repo if it helps you protect user privacy!**
 
-**Made with ❤️ by developers, for developers**
+**Made by developers, for developers**
 
 ![Visitors](https://visitor-badge.laobi.icu/badge?page_id=omers.pii-anonymizer-api)
 
@@ -553,6 +555,6 @@ Built with ❤️ using:
 
 ---
 
-## 🏷️ Keywords & Tags
+## Keywords & Tags
 
 `pii-anonymization` `data-privacy` `gdpr-compliance` `fastapi` `python` `microsoft-presidio` `data-protection` `privacy-tools` `log-sanitization` `hipaa-compliance` `pci-dss` `data-security` `nlp` `spacy` `docker` `rest-api` `enterprise-ready` `production-ready` `open-source` `machine-learning` `text-processing` `sensitive-data` `anonymizer` `redaction` `masking` `hashing` `encryption` `multi-language` `healthcare` `fintech` `compliance` `data-governance`

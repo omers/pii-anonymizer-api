@@ -104,7 +104,25 @@ class AnonymizationConfig(BaseModel):
         description="Custom replacement text for REPLACE strategy",
     )
     mask_char: str = Field(
-        default="*", description="Character to use for MASK strategy"
+        default="*",
+        min_length=1,
+        max_length=1,
+        description="Character to use for MASK strategy",
+    )
+    chars_to_mask: Optional[int] = Field(
+        default=None,
+        ge=1,
+        description=(
+            "Characters to mask per entity for MASK strategy. "
+            "Masks the entire entity when omitted"
+        ),
+    )
+    mask_from_end: bool = Field(
+        default=False,
+        description=(
+            "Mask from the end of each entity instead of the start "
+            "(MASK strategy)"
+        ),
     )
     hash_type: str = Field(
         default="sha256", description="Hash algorithm for HASH strategy"
@@ -113,7 +131,8 @@ class AnonymizationConfig(BaseModel):
     @field_validator("hash_type")
     @classmethod
     def validate_hash_type(cls, v: str) -> str:
-        allowed = {"sha256", "sha384", "sha512", "sha3_256", "sha3_384", "sha3_512"}
+        # presidio's hash operator implements sha256 and sha512 only.
+        allowed = {"sha256", "sha512"}
         if v not in allowed:
             raise ValueError(
                 f"hash_type must be one of: {', '.join(sorted(allowed))}"
@@ -368,10 +387,20 @@ async def anonymize_text(request: AnonymizeRequest) -> AnonymizeResponse:
             elif request.config.strategy == AnonymizationStrategy.REDACT:
                 operators = {"DEFAULT": OperatorConfig("redact")}
             elif request.config.strategy == AnonymizationStrategy.MASK:
+                # presidio's mask operator requires all three parameters and
+                # clamps chars_to_mask to the entity length, so defaulting it
+                # to the text length masks every entity in full.
+                chars_to_mask = request.config.chars_to_mask
+                if chars_to_mask is None:
+                    chars_to_mask = len(request.text)
                 operators = {
                     "DEFAULT": OperatorConfig(
                         "mask",
-                        {"masking_char": request.config.mask_char},
+                        {
+                            "masking_char": request.config.mask_char,
+                            "chars_to_mask": chars_to_mask,
+                            "from_end": request.config.mask_from_end,
+                        },
                     )
                 }
             elif request.config.strategy == AnonymizationStrategy.HASH:

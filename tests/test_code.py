@@ -3,6 +3,8 @@ import time
 from unittest.mock import Mock, patch, AsyncMock
 from fastapi.testclient import TestClient
 from presidio_analyzer import RecognizerResult
+from presidio_anonymizer import AnonymizerEngine
+from pydantic import ValidationError
 
 try:
     from presidio_anonymizer.entities import AnonymizeResult
@@ -279,8 +281,134 @@ class TestValidationAndErrorHandling:
             assert "Test error" in error_data["message"]
 
 
+class TestOperatorConfiguration:
+    """Operator configs are exercised against the real anonymizer engine.
+
+    Mocking ``main.anonymizer_engine`` hides presidio's own parameter
+    validation, which is how the MASK strategy shipped broken. These tests
+    mock only the analyzer, so no spaCy model is required.
+    """
+
+    @staticmethod
+    def _anonymize(payload):
+        """POST to /anonymize with a real AnonymizerEngine in place."""
+        results = [
+            RecognizerResult(entity_type="PERSON", start=0, end=8, score=0.85)
+        ]
+        with patch("main.analyzer_engine") as mock_analyzer, patch(
+            "main.anonymizer_engine", AnonymizerEngine()
+        ):
+            mock_analyzer.analyze.return_value = results
+            return client.post("/anonymize", json=payload)
+
+    def test_mask_strategy_masks_entity_in_full_by_default(self):
+        """MASK must supply every parameter presidio requires."""
+        response = self._anonymize(
+            {
+                "text": "John Doe went to the market",
+                "config": {"strategy": "mask", "mask_char": "*"},
+            }
+        )
+
+        assert response.status_code == 200
+        assert response.json()["anonymized_text"] == (
+            "******** went to the market"
+        )
+
+    def test_mask_strategy_respects_chars_to_mask(self):
+        """A caller-supplied chars_to_mask masks only that many characters."""
+        response = self._anonymize(
+            {
+                "text": "John Doe went to the market",
+                "config": {
+                    "strategy": "mask",
+                    "mask_char": "#",
+                    "chars_to_mask": 4,
+                },
+            }
+        )
+
+        assert response.status_code == 200
+        assert response.json()["anonymized_text"] == (
+            "#### Doe went to the market"
+        )
+
+    def test_mask_strategy_from_end(self):
+        """mask_from_end masks the tail of the entity instead of the head."""
+        response = self._anonymize(
+            {
+                "text": "John Doe went to the market",
+                "config": {
+                    "strategy": "mask",
+                    "mask_char": "#",
+                    "chars_to_mask": 3,
+                    "mask_from_end": True,
+                },
+            }
+        )
+
+        assert response.status_code == 200
+        assert response.json()["anonymized_text"] == (
+            "John ### went to the market"
+        )
+
+    @pytest.mark.parametrize("hash_type", ["sha256", "sha512"])
+    def test_hash_strategy_supported_algorithms(self, hash_type):
+        """Every hash_type the model accepts must work end to end."""
+        response = self._anonymize(
+            {
+                "text": "John Doe went to the market",
+                "config": {"strategy": "hash", "hash_type": hash_type},
+            }
+        )
+
+        assert response.status_code == 200
+
+    def test_redact_and_replace_still_work(self):
+        """Guard the untouched strategies against operator-config drift."""
+        text = "John Doe went to the market"
+
+        redacted = self._anonymize(
+            {"text": text, "config": {"strategy": "redact"}}
+        )
+        assert redacted.status_code == 200
+        assert redacted.json()["anonymized_text"] == " went to the market"
+
+        replaced = self._anonymize(
+            {
+                "text": text,
+                "config": {
+                    "strategy": "replace",
+                    "replacement_text": "<NAME>",
+                },
+            }
+        )
+        assert replaced.status_code == 200
+        assert replaced.json()["anonymized_text"] == (
+            "<NAME> went to the market"
+        )
+
+
 class TestConfigurationAndModels:
     """Test cases for configuration and data models"""
+
+    @pytest.mark.parametrize(
+        "hash_type", ["sha384", "sha3_256", "sha3_384", "sha3_512"]
+    )
+    def test_unsupported_hash_types_rejected(self, hash_type):
+        """Algorithms presidio cannot run must fail validation."""
+        with pytest.raises(ValidationError):
+            AnonymizationConfig(hash_type=hash_type)
+
+    def test_mask_char_must_be_single_character(self):
+        """presidio rejects multi-character masks; catch it early."""
+        with pytest.raises(ValidationError):
+            AnonymizationConfig(mask_char="**")
+
+    def test_chars_to_mask_must_be_positive(self):
+        """Masking zero characters would silently leave PII in place."""
+        with pytest.raises(ValidationError):
+            AnonymizationConfig(chars_to_mask=0)
 
     def test_anonymization_config_defaults(self):
         """Test AnonymizationConfig default values"""
@@ -289,6 +417,8 @@ class TestConfigurationAndModels:
         assert config.strategy == AnonymizationStrategy.REPLACE
         assert config.entities_to_anonymize is None
         assert config.replacement_text is None
+        assert config.chars_to_mask is None
+        assert config.mask_from_end is False
         assert config.mask_char == "*"
         assert config.hash_type == "sha256"
 
